@@ -9,30 +9,18 @@ import searchAgents
 
 class FeatureBasedGameState(object):
     def __init__(self, gameState):
-        # type: (GameState) -> None
-
-        if gameState == None:  # Just create an empty FBGS object that you could fill up by yourself later
+        if gameState == None:
             return
-
-        # Storing the GameState; it might be needed
         self.rawGameState = gameState
-
-        # Please list all the features here. It becomes convenient; don't miss out any, or directly initialise elsewhere
         self.moveToClosestFood = None
         self.ghostWithin1UnitOfClosestFoodDirectionPoint = None
-
-        # Caching some stuff for faster calculations - don't change this please!
         self.closestGhosts = None
         self.ghostPositions = self.rawGameState.getGhostPositions()
-
-        # This is where you will calculate the features you have listed above
         self.moveToClosestFood = self.getMoveToClosestFood()
         self.ghostWithin1UnitOfClosestFoodDirectionPoint = self.isGhostWithin1UnitOfClosestFoodDirectionPoint()
 
     def getMoveToClosestFood(self):
-        problem = searchAgents.AnyFoodSearchProblem(self.rawGameState)
-        sequenceOfActions = search.aStarSearch(problem)
-        return sequenceOfActions[0]
+        return search.aStarSearch(searchAgents.AnyFoodSearchProblem(self.rawGameState))[0]
 
     def isGhostWithin1UnitOfClosestFoodDirectionPoint(self):
         x, y = self.rawGameState.getPacmanPosition()
@@ -48,13 +36,9 @@ class FeatureBasedGameState(object):
         else:
             raise Exception("Invalid move " + str(self.moveToClosestFood))
         cpx, cpy = closestFoodMovePoint
-        # Check if ghost is present in any of the adjacent positions or at closestFoodMovePoint itself
-        intersection = {(cpx, cpy), (cpx + 1, cpy), (cpx - 1, cpy), (cpx, cpy + 1), (cpx, cpy - 1)} & set(
-            self.ghostPositions)
+        intersection = {(cpx, cpy), (cpx + 1, cpy), (cpx - 1, cpy), (cpx, cpy + 1), (cpx, cpy - 1)} & set(self.ghostPositions)
         return len(intersection) > 0
 
-    # If you add a feature, add it here too
-    # This is required by the hash function and thus required for proper indexing
     def __key(self):
         return (
             self.moveToClosestFood,
