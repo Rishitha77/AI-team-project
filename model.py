@@ -9,34 +9,31 @@ class Model(object):
     def __init__(self):
         self.data = {}
 
-    def updateEntry(self, fbgs, actionTaken, nWins, pseudoWins, nSimulations, avgReward):
-        # type: (FeatureBasedGameState, str, int, float, int, float) -> None
-        self.data[(fbgs, actionTaken)] = ModelEntry(nWins=nWins, pseudoWins=pseudoWins,
-                                                    nSimulations=nSimulations, avgReward=avgReward)
+    def updateState(self, gamestate, nextAction, wins, pwins, simulations, reward):
+        self.data[(gamestate, nextAction)] = ModelEntry(nWins=wins, pseudoWins=pwins,
+                                                    nSimulations=simulations, avgReward=reward)
 
-    def writeModelToFile(self, file):
+    def newModel(self, file):
         with open(file, 'w') as f:
-            for key, value in list(self.data.items()):
-                f.write(str(key) + ": " + str(value) + "\n")
-        self.saveModel(constants.OUTPUT_MODEL)
+            for k, v in list(self.data.items()):
+                f.write(str(k) + ": " + str(v) + "\n")
+        self.savetoFile(constants.OUTPUT_MODEL)
 
-    def saveModel(self, outputModelFilePath):
-        filename = outputModelFilePath
+    def savetoFile(self, filePath):
+        filename = filePath
         with open(filename, 'wb') as f:
             pickle.dump(self.data, f)
 
 
-def getModel(filename):
+def loadModel(filename):
     with open(filename, 'rb') as f:
         data = pickle.load(f)
     model = Model()
     model.data = data
     return model
 
-# This global Model is used to store the statistics of all the simulations
-# Note that if you are using an existing model (loaded from the .pkl file) the stats will be combined
 commonModel = None
-if constants.MODEL_TO_USE is not None:
-    commonModel = getModel(constants.MODEL_TO_USE)
+if constants.MODEL is not None:
+    commonModel = loadModel(constants.MODEL)
 else:
     commonModel = Model()
