@@ -1,16 +1,8 @@
-# Inputs - you probably want to change these
+#Uncomment the Model you want to use
 
-# The binary pickle file that will be loaded and used
-# Make this None if you dont want to use an existing model
-# MODEL_TO_USE = None
-MODEL_TO_USE = "models/model-latest.pkl"
-# MODEL_TO_USE = "models/perfect-model.pkl"
+# MODEL = None
+#MODEL = "models/model-latest.pkl"
+MODEL = "models/perfect-model.pkl"
 
-
-
-# Outputs - you mostly don't want to change these
-
-# The readable model file - this is simply for you to debug stuff
 OUTPUT_MODEL_TEXT_FILE = "models/model-latest.txt"
-# The binary model file that you have built; maybe you want to use this
 OUTPUT_MODEL = "models/model-latest.pkl"
