@@ -32,9 +32,13 @@ Layouts:
 1. testClassic
 2. smallClassic
 3. mediumClassic
-4. projectClassic1
-5. projectClassic2
-6. bigClassic
-7. openClassic
+4. projectClassic1 (new generated layout)
+5. projectClassic2 (new generated layout)
+6. projectClassic3 (new generated layout)
+7. bigClassic
+8. openClassic
+9. powerClassic
+10. trappedClassic
+11. originalClassic
 
 Generated results and p-values obtained from t-Test can be found in `results` folder.
