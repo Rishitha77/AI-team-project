@@ -10,7 +10,7 @@ Whole code is in python 3 version(3.9.7 to be precise)
 
 Instructions:
 -------------
-1. Be in `multiagent/` directory to execute commands that are mentioned below.
+1. Be in `AI-team-project/` directory to execute commands that are mentioned below.
 2. Install all dependencies listed in requirements.txt: \
    `pip install -r requirements.txt`
 3. Run the follwing command to execute Monte-Carlo Tree Search Agent:\
