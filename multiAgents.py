@@ -1,4 +1,4 @@
-# multiAgents.py
+#multiAgents.py
 # --------------
 # Licensing Information:  You are free to use or extend these projects for
 # educational purposes provided that (1) you do not distribute or publish
@@ -15,6 +15,8 @@
 from util import manhattanDistance
 from game import Directions
 import random, util
+from random import randint
+from util import manhattanDistance as md
 
 from model import commonModel, Model
 from featureBasedGameState import FeatureBasedGameState
@@ -355,105 +357,79 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
         return exp_value, ""
 
-def betterEvaluationFunction(currentGameState):
-    """
-      Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
-      evaluation function (question 5).
+def newEvaluationFunction(currentGameState):
 
-      DESCRIPTION: This evaluation function -
-      1) Rewards not dying (of course!) - this logic is captured by the game score itself
-      2) Gives a high reward for eating up food pellets
-      3) Gives a small reward for being closer to the food
-    """
-    "*** YOUR CODE HERE ***"
-    # Imports
-    from random import randint
-    from util import manhattanDistance as md
-
-    # Useful information extracted from GameState (pacman.py)
     pacmanPos = currentGameState.getPacmanPosition()
     foodMatrix = currentGameState.getFood()
     foodList = foodMatrix.asList()
     successorGameScore = currentGameState.getScore()
 
-    # Actual calculations start here
     numberOfRemainingFood = len(foodList)
 
     distanceFromFoods = [md(pacmanPos, newFoodPos) for newFoodPos in foodList]
     distanceFromClosestFood = 0 if (len(distanceFromFoods) == 0) else min(distanceFromFoods)
 
-    finalScore = successorGameScore - (50 * numberOfRemainingFood) - (5 * distanceFromClosestFood)  + randint(0,1)
+    finalScore = successorGameScore - (60 * numberOfRemainingFood) - (5 * distanceFromClosestFood)  + randint(0,1)
     return finalScore
 
-# Abbreviation
-better = betterEvaluationFunction
-
 class MCTSAgent(MultiAgentSearchAgent):
-    def __init__(self, evalFn = 'betterEvaluationFunction', numTraining = '0', isReal = False):
-        self.currentGame = 0
+    def __init__(self, evalFn = 'newEvaluationFunction', numTraining = '0', isReal = False):
+        self.games = 0
         self.numberOfTrainingGames = int(numTraining)
-        # Some configurable parameters go here - try changing these to tune your results
-
-        # This is the probability with which we will guide the pacman to make a good move during every state.
-        # I have introduced this because, in some layouts, the pacman never wins during simulations, and hence, can
-        # never find good moves it can exploit.
-        # Think of this as an additional "exploitation factor". Kocsis does its own exploitation too.
-        # This parameter is, of course, not used during real games.
+        
+        #Probability for the pacman to make a good move. It is an additional "Exploitation factor".
+        #Can change this parameter if required.
         self.guidance = 0.3
 
-        # The exploitation-exploration factor used by Kocsis - higher value = higher exploration
+        # The exploitation-exploration factor.
+        #Higher the value higher the exploitation.
         self.c = sqrt(2) + 0.5
 
-    def getUCTValue(self, w, n, N, c):
-        return w/(n+1.0) + c*sqrt(log(N+1.0)/(n+1.0))
-
     def registerInitialState(self, state):
-        self.currentGame += 1
+        self.games += 1
 
-    def getAction(self, state):
-        # type: (GameState) -> str
-        fbgs = FeatureBasedGameState(state)
-        if self.currentGame <= self.numberOfTrainingGames:
-            # Guide the pacman to win, with some probability
-            if random.random() < self.guidance and not fbgs.ghostWithin1UnitOfClosestFoodDirectionPoint:
-                return fbgs.moveToClosestFood
-            uctValues = self.getUCTValues(fbgs, commonModel)
-            actionToReturn = max(uctValues)[1]
-            return actionToReturn
-        else:  # This is real game - make the best move!
-            return self.realActionToTake(fbgs, commonModel)
+    def getUCBValue(self, weight, n, N, c):
+        return weight/(n+1.0) + c*sqrt(log(N+1.0)/(n+1.0))
 
-    def realActionToTake(self, fbgs, model):
-        valueActionPairs = []  # Value can be whatever you formulate it to be
-                               # The action with the max value will be returned
-        for action in fbgs.rawGameState.getLegalActions():
-            value = None
-            if (fbgs, action) not in model.data:
-                value = 0
-            else:
-                value = model.data[(fbgs, action)].nSimulations  # select the action with max simulations
-                # value = model.data[(fbgs, action)].avgReward
-            valueActionPairs.append((value, action))
-        return max(valueActionPairs)[1]
-
-    def getUCTValues(self, fbgs, model):
-        # type: (FeatureBasedGameState, Model) -> List[(float, str)]
-        w = {}
+    def UCBValues(self, gameState, model):
+        weights = {}
         n = {}
         N = 0
-        legalActions = fbgs.rawGameState.getLegalActions()
+        legalActions = gameState.oldGameState.getLegalActions()
         for action in legalActions:
-            if (fbgs, action) not in model.data:
+            if (gameState, action) not in model.data:
                 n[action] = 0
-                w[action] = 0
+                weights[action] = 0
             else:
-                n[action] = model.data[(fbgs, action)].nSimulations
-                w[action] = model.data[(fbgs, action)].nWins \
-                # + model.data[(fbgs, action)].pseudoWins
-                # Give the agent *some* ^ "wins" for a higher score - hopefully this will fix the zero wins case
+                n[action] = model.data[(gameState, action)].nSimulations
+                weights[action] = model.data[(gameState, action)].nWins \
+                
             N += n[action]
-        uctValues = []
+        ucbValues = []
         for action in legalActions:
-            uctValue = self.getUCTValue(w[action], n[action], N, self.c)
-            uctValues.append((uctValue, action))
-        return uctValues
+            uctValue = self.getUCBValue(weights[action], n[action], N, self.c)
+            ucbValues.append((uctValue, action))
+        return ucbValues
+
+    def getAction(self, state):
+        gameState = FeatureBasedGameState(state)
+        if self.games <= self.numberOfTrainingGames:
+            if random.random() < self.guidance and not gameState.ghostNearFood:
+                return gameState.closestFood
+            ucbValues = self.UCBValues(gameState, commonModel)
+            actionToReturn = max(ucbValues)[1]
+            return actionToReturn
+        else:
+            return self.actualAction(gameState, commonModel)
+
+    def actualAction(self, gameState, model):
+        valueActionPairs = []
+        for action in gameState.oldGameState.getLegalActions():
+            value = None
+            if (gameState, action) not in model.data:
+                value = 0
+            else:
+                # select the action with max simulations
+                value = model.data[(gameState, action)].nSimulations 
+            valueActionPairs.append((value, action))
+        return max(valueActionPairs)[1]
